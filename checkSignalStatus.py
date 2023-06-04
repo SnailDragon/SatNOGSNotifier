@@ -101,20 +101,16 @@ observations = get_paginated_endpoint(
     filter_output_callback=filter
 )
 
-print(len(observations))
-
 # count failed observations
 count = 0
 for obs in observations:
     if(obs["status"] == "failed"):
         count += 1
 
-log.info("Test")
-
 if ENABLE_AUTO_REBOOT:
     # react only if more than half of the observations failed 
     if (count > len(observations) / 2) and (time() - boot_time() < MAX_ALLOWED_TIME_SINCE_REBOOT_S):
-        log.info("Triggered Reboot at " + datetime.now())
+        log.info(f"{count}/{len(observations)} observations failed, triggered reboot at {datetime.now()}")
         os.system("sudo reboot")
     elif (count > len(observations) / 2) and (time() - boot_time() >= MAX_ALLOWED_TIME_SINCE_REBOOT_S):
         notifyOwner()
