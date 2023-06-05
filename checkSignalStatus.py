@@ -1,13 +1,13 @@
 import requests
 from psutil import boot_time
 from time import time
-from datetime import datetime
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+from gmailClient import notifyOwners
+import privateSettings
 
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
 logFile = 'checkSignalStatus.log'
 my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=False)
 my_handler.setFormatter(log_formatter)
@@ -20,10 +20,6 @@ log.addHandler(my_handler)
 # settings of a sort
 TIMEOUT = 30
 MAX_ENTRIES = 10
-GROUND_STATION = 3086
-MAX_ALLOWED_TIME_SINCE_REBOOT_S = 60 * 60 * 24 # 1 day in seconds
-ENABLE_AUTO_REBOOT = True
-
 NETWORK_BASE_URL = "https://network.satnogs.org"
 
 # provided by SatNOGS 
@@ -38,7 +34,6 @@ def get_paginated_endpoint(url,
                            token=None, max_retries=0, 
                            filter_output_callback=None, 
                            stop_criterion_callback=None):
-    print("starting")
     try:
         session = requests.Session()
         session.mount('https://', requests.adapters.HTTPAdapter(max_retries=max_retries))
@@ -83,9 +78,6 @@ def get_paginated_endpoint(url,
     
     return data
 
-def notifyOwner():
-    pass
-
 # https://network.satnogs.org/api/observations/?ground_station=3086 
 def filter(data):
     filtered_data = []
@@ -96,7 +88,7 @@ def filter(data):
 
 # get the last page of observations, typically around 20, then is stopping when limited by max_entries 
 observations = get_paginated_endpoint(
-    f"{NETWORK_BASE_URL}/api/observations/?ground_station={GROUND_STATION}",
+    f"{NETWORK_BASE_URL}/api/observations/?ground_station={privateSettings.GROUND_STATION}",
     max_entries=MAX_ENTRIES,
     filter_output_callback=filter
 )
@@ -107,13 +99,24 @@ for obs in observations:
     if(obs["status"] == "failed"):
         count += 1
 
-if ENABLE_AUTO_REBOOT:
-    # react only if more than half of the observations failed 
-    if (count > len(observations) / 2) and (time() - boot_time() < MAX_ALLOWED_TIME_SINCE_REBOOT_S):
-        log.info(f"{count}/{len(observations)} observations failed, triggered reboot at {datetime.now()}")
+# try reboot and notify specified owner email addresses
+if privateSettings.ENABLE_AUTO_REBOOT:
+    # try reboot if it hasn't rebooted in a while (defined by MAX_ALLOWED_TIME_SINCE_REBOOT
+    if (count > len(observations) / 2) and (time() - boot_time() < privateSettings.MAX_ALLOWED_TIME_SINCE_REBOOT_S):
+        notifyOwners(privateSettings.RECIPIENT_EMAILS, 
+                    f"SatNOGS Station {privateSettings.GROUND_STATION} is having issues", 
+                    f"{count}/{len(observations)} recent observations failed, attempting reboot now")
+        log.info(f"{count}/{len(observations)} observations failed, triggered reboot")
         os.system("sudo reboot")
-    elif (count > len(observations) / 2) and (time() - boot_time() >= MAX_ALLOWED_TIME_SINCE_REBOOT_S):
-        notifyOwner()
+    elif (count > len(observations) / 2) and (time() - boot_time() >= privateSettings.MAX_ALLOWED_TIME_SINCE_REBOOT_S):
+        notifyOwners(privateSettings.RECIPIENT_EMAILS, 
+                    f"SatNOGS Station {privateSettings.GROUND_STATION} is having issues", 
+                    f"{count}/{len(observations)} recent observations failed, system has rebooted recently and failed to fix the issue")
+# only notify specified owner email addresses
 else:
     if (count > len(observations) / 2):
-        notifyOwner()
+        notifyOwners(privateSettings.RECIPIENT_EMAILS, 
+                    f"SatNOGS Station {privateSettings.GROUND_STATION} is having issues", 
+                    f"{count}/{len(observations)} recent observations failed")
+
+log.info(f"Script completed successfully, {count}/{len(observations)} observations failed")
