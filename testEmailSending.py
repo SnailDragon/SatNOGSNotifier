@@ -4,5 +4,6 @@
 
 from gmailClient import notifyOwners
 import privateSettings
+from datetime import datetime
 
-notifyOwners(privateSettings.RECIPIENT_EMAILS, "SatNOGS Notifier Test", "This is a test email")
+notifyOwners(privateSettings.RECIPIENT_EMAILS, "SatNOGS Notifier Test", f"This is a test email sent on {datetime.now()}")
