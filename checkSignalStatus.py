@@ -8,7 +8,7 @@ from gmailClient import notifyOwners
 import privateSettings
 
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-logFile = 'checkSignalStatus.log'
+logFile = 'SatNOGSNotifier/checkSignalStatus.log'
 my_handler = RotatingFileHandler(logFile, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=False)
 my_handler.setFormatter(log_formatter)
 my_handler.setLevel(logging.INFO)
