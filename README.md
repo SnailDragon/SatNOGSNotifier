@@ -3,10 +3,10 @@ Scrip used with SatNOGS (https://satnogs.org/) ground stations to notify the own
 
 The main script is checkSignalStatus.py, when run it will output logs to checkSignalStatus.log - currently it writes to SatNOGSNotifier/checkSignalStatus.log on the assumption that you are running it in the home folder. <br>
 
-I suggest regularly running this script using crontab
+I suggest regularly running this script using crontab with this cron job
 NOTE: it needs to be run more regularly than MAX_ALLOWED_TIME_SINCE_REBOOT_S or it won't stop trying to reboot and just send you an email
 ```
-
+30 */12 * * * /bin/python3 /home/{your username}/SatNOGSNotifier/checkSignalStatus.py
 ```
 
 Rename the file "privateSettingsTEMPLATE.py" to "privateSettings.py" and fill in your information before trying to run the program.
