@@ -1,5 +1,5 @@
 # SatNOGSNotifier
-Scrip used with SatNOGS (https://satnogs.org/) ground stations to notify the owner via email when it is failing to pick up signals. <br>
+Script used with SatNOGS (https://satnogs.org/) ground stations to notify the owner via email when it is failing to pick up signals. <br>
 
 The main script is checkSignalStatus.py, when run it will output logs to checkSignalStatus.log - currently it writes to SatNOGSNotifier/checkSignalStatus.log on the assumption that you are running it in the home folder. <br>
 
